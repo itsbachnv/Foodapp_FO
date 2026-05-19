@@ -41,7 +41,7 @@ export default function LoginScreen() {
     try {
       const res = await authService.login(data.email, data.password);
       await setAuth(res.token);
-      router.replace('/home');
+      router.replace('/(tabs)/home');
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Đăng nhập thất bại';
       Toast.show({ type: 'error', text1: 'Lỗi', text2: msg });

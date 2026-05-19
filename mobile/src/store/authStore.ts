@@ -16,6 +16,7 @@ interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  isHydrated: boolean;
   setAuth: (token: string, refreshToken?: string | null, user?: User | null) => Promise<void>;
   logout: () => Promise<void>;
   loadFromStorage: () => Promise<void>;
@@ -28,6 +29,7 @@ const initialSnapshot: AuthSnapshot = {
   accessToken: null,
   refreshToken: null,
   isAuthenticated: false,
+  isHydrated: false,
 };
 
 let snapshot = initialSnapshot;
@@ -110,14 +112,14 @@ const setAuth: AuthState['setAuth'] = async (accessToken, refreshToken, user) =>
   }
   const nextUser = user || buildUserFromToken(accessToken);
   await safeSet('user', JSON.stringify(nextUser));
-  updateSnapshot({ accessToken, refreshToken: refreshToken || null, user: nextUser, isAuthenticated: true });
+  updateSnapshot({ accessToken, refreshToken: refreshToken || null, user: nextUser, isAuthenticated: true, isHydrated: true });
 };
 
 const logout: AuthState['logout'] = async () => {
   await safeDelete('accessToken');
   await safeDelete('refreshToken');
   await safeDelete('user');
-  updateSnapshot({ accessToken: null, refreshToken: null, user: null, isAuthenticated: false });
+  updateSnapshot({ accessToken: null, refreshToken: null, user: null, isAuthenticated: false, isHydrated: true });
 };
 
 const loadFromStorage: AuthState['loadFromStorage'] = async () => {
@@ -126,8 +128,11 @@ const loadFromStorage: AuthState['loadFromStorage'] = async () => {
   const userStr = await safeGet('user');
   if (token) {
     const user = userStr ? JSON.parse(userStr) : buildUserFromToken(token);
-    updateSnapshot({ accessToken: token, refreshToken: refreshToken || null, user, isAuthenticated: true });
+    updateSnapshot({ accessToken: token, refreshToken: refreshToken || null, user, isAuthenticated: true, isHydrated: true });
+    return;
   }
+
+  updateSnapshot({ isHydrated: true });
 };
 
 const subscribe = (listener: () => void) => {

@@ -1,5 +1,12 @@
-import HomeScreen from '../src/screens/homeScreen';
+import { Redirect } from 'expo-router';
+import { useAuthStore } from '@/store/authStore';
 
 export default function Page() {
-  return <HomeScreen />;
+  const { isAuthenticated, isHydrated } = useAuthStore();
+
+  if (!isHydrated) {
+    return null;
+  }
+
+  return <Redirect href={isAuthenticated ? '/(tabs)/home' : '/login'} />;
 }

@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'expo-router';
+import { HomeHeader } from '@/components/home/HomeHeader';
+import { QuickOptionChips, QuickOptionItem } from '@/components/home/QuickOptionChips';
 
 const categories = [
   { icon: '🍔', name: 'Burger' },
@@ -21,9 +22,18 @@ const featured = [
   { emoji: '🍜', name: 'Phở Bò Đặc Biệt', shop: 'Phở Hà Nội', price: '55.000đ', rating: '4.7', time: '20 phút' },
 ];
 
+const quickOptions: QuickOptionItem[] = [
+  { id: 'all', label: 'Tất cả' },
+  { id: 'fast', label: 'Giao nhanh' },
+  { id: 'promo', label: 'Khuyến mãi' },
+  { id: 'healthy', label: 'Món nhẹ' },
+  { id: 'favorite', label: 'Ưa thích' },
+];
+
 export default function HomeScreen() {
   const { user, logout, isAuthenticated, loadFromStorage } = useAuthStore();
   const router = useRouter();
+  const [selectedOption, setSelectedOption] = useState('all');
 
   useEffect(() => {
     void loadFromStorage();
@@ -31,35 +41,25 @@ export default function HomeScreen() {
 
   const handleLogout = async () => {
     await logout();
-    router.replace('/');
+    router.replace('/login');
   };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <LinearGradient colors={[Colors.primaryDark, Colors.primary]} style={styles.header}>
-        <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.greeting}>{isAuthenticated ? 'Xin chào 👋' : 'Chào mừng bạn 👋'}</Text>
-            <Text style={styles.userName}>{user?.firstName || user?.email || 'Foodie'}</Text>
-          </View>
-          {isAuthenticated ? (
-            <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-              <Ionicons name="log-out-outline" size={22} color="#fff" />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity onPress={() => router.push('/login')} style={styles.loginBtn}>
-              <Text style={styles.loginBtnText}>Login</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+      <HomeHeader
+        userName={user?.firstName || user?.email?.split('@')[0] || 'Foodie'}
+        isAuthenticated={isAuthenticated}
+        onProfilePress={() => router.push('/(tabs)/profile')}
+        onLoginPress={() => router.push('/login')}
+        onLogoutPress={handleLogout}
+      />
 
-        {/* Search bar */}
-        <TouchableOpacity style={styles.searchBar}>
-          <Ionicons name="search-outline" size={20} color={Colors.gray} />
-          <Text style={styles.searchPlaceholder}>Tìm kiếm món ăn...</Text>
-        </TouchableOpacity>
-      </LinearGradient>
+      <QuickOptionChips
+        title="Tùy chọn nhanh"
+        options={quickOptions}
+        selectedId={selectedOption}
+        onSelect={setSelectedOption}
+      />
 
       {/* Banner */}
       <View style={styles.bannerWrap}>
@@ -72,7 +72,17 @@ export default function HomeScreen() {
           <View style={styles.bannerTextCol}>
             <Text style={styles.bannerTag}>Hôm nay ăn gì?</Text>
             <Text style={styles.bannerTitle}>Món ngon nóng hổi, giao nhanh tận cửa</Text>
-            <Text style={styles.bannerSub}>Khám phá burger, pizza, mì và sushi đang được đặt nhiều nhất.</Text>
+            <Text style={styles.bannerSub}>
+              {selectedOption === 'fast'
+                ? 'Ưu tiên các món giao nhanh, phù hợp khi bạn đang cần đặt gấp.'
+                : selectedOption === 'promo'
+                  ? 'Xem các món đang có ưu đãi để tối ưu chi phí đặt hàng.'
+                  : selectedOption === 'healthy'
+                    ? 'Gợi ý các món nhẹ nhàng hơn cho bữa ăn cân bằng.'
+                    : selectedOption === 'favorite'
+                      ? 'Truy cập nhanh các món bạn hay quay lại đặt.'
+                      : 'Khám phá burger, pizza, mì và sushi đang được đặt nhiều nhất.'}
+            </Text>
           </View>
 
           <View style={styles.bannerArt}>
@@ -89,7 +99,10 @@ export default function HomeScreen() {
 
       {/* Categories */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Danh mục</Text>
+        <View style={styles.sectionHeadingRow}>
+          <Text style={styles.sectionTitle}>Danh mục</Text>
+          <Text style={styles.sectionMeta}>Có thể tái sử dụng ở các screen khác</Text>
+        </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryList}>
           {categories.map((c, i) => (
             <TouchableOpacity key={i} style={styles.categoryItem}>
@@ -102,7 +115,10 @@ export default function HomeScreen() {
 
       {/* Featured */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Món nổi bật 🔥</Text>
+        <View style={styles.sectionHeadingRow}>
+          <Text style={styles.sectionTitle}>Món nổi bật 🔥</Text>
+          <Text style={styles.sectionMeta}>Lọc UI bằng selectedOption sau này</Text>
+        </View>
         {featured.map((item, i) => (
           <TouchableOpacity key={i} style={styles.foodCard}>
             <View style={styles.foodEmoji}><Text style={{ fontSize: 40 }}>{item.emoji}</Text></View>
@@ -125,23 +141,6 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  header: { paddingTop: 60, paddingBottom: 28, paddingHorizontal: 20 },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
-  greeting: { fontSize: 14, color: 'rgba(255,255,255,0.8)' },
-  userName: { fontSize: 22, fontWeight: '800', color: '#fff' },
-  logoutBtn: { padding: 8 },
-  loginBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-  },
-  loginBtnText: { color: '#fff', fontWeight: '700' },
-  searchBar: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff',
-    borderRadius: 12, paddingHorizontal: 14, height: 46, gap: 10,
-  },
-  searchPlaceholder: { color: Colors.gray, fontSize: 15 },
   bannerWrap: { paddingHorizontal: 20, marginTop: -10 },
   banner: {
     borderRadius: 24,
@@ -180,7 +179,9 @@ const styles = StyleSheet.create({
   },
   bannerPillText: { fontSize: 11, fontWeight: '700', color: Colors.text },
   section: { padding: 20, paddingBottom: 0 },
+  sectionHeadingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: Colors.text, marginBottom: 16 },
+  sectionMeta: { fontSize: 12, color: Colors.textLight },
   categoryList: { marginHorizontal: -20, paddingHorizontal: 20 },
   categoryItem: { alignItems: 'center', marginRight: 16 },
   categoryIcon: {

@@ -17,7 +17,7 @@ export default function WelcomeScreen() {
   useEffect(() => {
     (async () => {
       await loadFromStorage();
-      if (isAuthenticated) router.replace('/home');
+      if (isAuthenticated) router.replace('/(tabs)/home');
     })();
   }, []);
 

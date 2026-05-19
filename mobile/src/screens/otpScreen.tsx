@@ -41,7 +41,7 @@ export default function OtpScreen() {
       const res = await authService.verifyOtp({ identifier, otp });
       await setAuth(res.accessToken, res.refreshToken, res.user);
       Toast.show({ type: 'success', text1: '🎉 Thành công!', text2: 'Chào mừng bạn đến với FoodApp' });
-      setTimeout(() => router.replace('/home'), 1000);
+      setTimeout(() => router.replace('/(tabs)/home'), 1000);
     } catch (err: any) {
       const msg = err.response?.data?.message || 'OTP không đúng';
       Toast.show({ type: 'error', text1: 'Lỗi', text2: msg });
